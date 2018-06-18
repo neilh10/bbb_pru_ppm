@@ -1,0 +1,6 @@
+*.map
+*.lst
+*.obj
+.pp
+*.asm
+rpmsg\rpmsg_mng
