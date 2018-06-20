@@ -73,15 +73,16 @@ void main() {
 	channels.chn[offset].sr_uint32 =pps_delay_ms;
 	printf("shared_dataram = %p, offset=%d Read:", shared_dataram,offset);
     shared_dataram2 = (uint32_t *) shared_dataram;
-		    for(jjj=0; jjj<8; jjj++) {
-		    	printf(" %04d",  *shared_dataram2);
-		    	shared_dataram2++;
-		    	if (0x3 ==(jjj & 0x3)){printf("   ");}
-            }
+	for(jjj=0; jjj<8; jjj++) {
+		printf(" %04d",  *shared_dataram2);
+	   	shared_dataram2++;
+	   	if (0x3 ==(jjj & 0x3)){printf("   ");}
+    }
             printf("\n");
 	//for(jjj=0; jjj<8; jjj++) {
     //   channels.chn[jjj].sr_uint32=0;
     //}
+    //Fut - wait for ack from PRU and then clear
     //memset((void *)&channels,0,sizeof(channels));
    
     //while (1) 
