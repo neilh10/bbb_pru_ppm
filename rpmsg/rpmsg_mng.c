@@ -54,11 +54,11 @@ void main() {
 	unsigned int iii, jjj;
 	unsigned int offset;
     struct channels_s  channels;
-    
+#define COMMS_PORT_SIZE 64
 	/* Allocate shared memory pointer to PRU0 DATARAM */
 	int mem_dev = open("/dev/mem", O_RDWR | O_SYNC);
 	volatile void *shared_dataram = mmap(NULL,
-	    64,	/* grab 8*4 bytes or 8 words */
+	   COMMS_PORT_SIZE,	/* grab 8*4 bytes or 8 words */
 		PROT_READ | PROT_WRITE,
 		MAP_SHARED,
 		mem_dev,
@@ -69,25 +69,33 @@ void main() {
 	
     uint32_t pps_delay_ms =200;
     
-	printf("shared_dataram = %p\n", shared_dataram);
-
+	offset = 1;
+	channels.chn[offset].sr_uint32 =pps_delay_ms;
+	printf("shared_dataram = %p, offset=%d Read:", shared_dataram,offset);
+    shared_dataram2 = (uint32_t *) shared_dataram;
+		    for(jjj=0; jjj<8; jjj++) {
+		    	printf(" %04d",  *shared_dataram2);
+		    	shared_dataram2++;
+		    	if (0x3 ==(jjj & 0x3)){printf("   ");}
+            }
+            printf("\n");
 	//for(jjj=0; jjj<8; jjj++) {
     //   channels.chn[jjj].sr_uint32=0;
     //}
-    memset((void *)&channels,0,sizeof(channels));
+    //memset((void *)&channels,0,sizeof(channels));
    
     //while (1) 
     {
 	    for(iii=0; iii<8; iii++) {
 	    	pps_delay_ms+=100;
-			offset = 4;
+
 		    channels.chn[offset].sr_uint32 =pps_delay_ms;
 		    memcpy((void *)shared_dataram,(void *)&channels,sizeof(channels));
 			
-		    printf("Writing %08d Read:", pps_delay_ms);
+		    printf("Writing %04d Read:", pps_delay_ms);
 		    shared_dataram2 = (uint32_t *) shared_dataram;
 		    for(jjj=0; jjj<8; jjj++) {
-		    	printf(" %08d",  *shared_dataram2);
+		    	printf(" %04d",  *shared_dataram2);
 		    	shared_dataram2++;
 		    	if (0x3 ==(jjj & 0x3)){printf("   ");}
             }
@@ -99,4 +107,5 @@ void main() {
 		    //printf("Read 0x%08x (0x%08x)\n", j, j^0xAAAAAAAA);
 	    }
 	}
+	munmap((void *)shared_dataram,COMMS_PORT_SIZE); //njh guess at releasing it.
 }

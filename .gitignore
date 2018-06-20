@@ -3,4 +3,4 @@
 *.obj
 .pp
 *.asm
-rpmsg\rpmsg_mng
+rpmsg/rpmsg_mng

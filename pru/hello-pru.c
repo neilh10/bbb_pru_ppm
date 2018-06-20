@@ -89,7 +89,7 @@ void main(void) {
 	int j;
 	int offset;
     volatile uint32_t gpo; 
-    volatile uint32_t value_ms = 7;
+    volatile uint32_t value_ms = 100;
 
 
 	/* Clear SYSCFG[STANDBY_INIT] to enable OCP master port */
@@ -97,9 +97,10 @@ void main(void) {
 	
 	//*SHARED_RAM = 500;//inital value till changed
 	//channels.sr[0].ppm = 500;//inital value till changed
-	offset =4;
-	channels.chn[offset].sr_uint32 = 500;//inital value till changed
-
+	*SHARED_RAM = (int) 102;  //Treat as simple version on startup
+	offset =1; //
+	channels.chn[offset].sr_uint32 = 200;//inital value till changed
+	channels.chn[offset+1].sr_uint32 = 250;
 	
 	//for(i = 1000000; i > 0; i = (i * decay) / 100) {
 	 while(1){ 
