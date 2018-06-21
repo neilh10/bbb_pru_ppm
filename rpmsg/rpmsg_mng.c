@@ -52,7 +52,7 @@
 #define SHARED_RAM_SZ 32  /* grab 8*4 bytes or 8 words */
 
 void main() {
-	unsigned int iii, jjj;
+	unsigned int sec_i, chnl_j;
 	unsigned int offset;
     struct channels_s  channels;
 
@@ -74,33 +74,33 @@ void main() {
 	channels.chn[offset].sr =ppm;
 	printf("shared_dataram = %p, offset=%d At init Read:", shared_dataram,offset);
    shared_dataram2 = (uint16_t *) shared_dataram;
-	for(jjj=0; jjj<8; jjj++) {
+	for(chnl_j=0; chnl_j<8; chnl_j++) {
 		printf(" %04d",  *shared_dataram2);
 	   shared_dataram2++;
-	   if (0x3 ==(jjj & 0x3)){printf("   ");}
+	   if (0x3 ==(chnl_j & 0x3)){printf("   ");}
    }
    printf("\n");
     
    ppm =0;
-	for(jjj=0; jjj<8; jjj++) {
-	   ppm += 60;
-      channels.chn[jjj].sr=ppm;
+	for(chnl_j=0; chnl_j<8; chnl_j++) {
+      channels.chn[chnl_j].sr=ppm;
+      ppm += 60;
     }
     //Fut - wait for ack from PRU and then init shared ram
 
     //while (1) 
     {
 	    ppm=60;
-	    for(iii=0; iii<8; iii++) {
-	       channels.chn[offset].sr =ppm;
+	    for(sec_i=0; sec_i<8; sec_i++) {
+	       channels.chn[offset].sr +=ppm;
 		    memcpy((void *)shared_dataram,(void *)&channels,sizeof(channels));
 			
 		    printf("Writing %04d Read:", ppm);
 		    shared_dataram2 = (uint16_t *) shared_dataram;
-		    for(jjj=0; jjj<8; jjj++) {
+		    for(chnl_j=0; chnl_j<8; chnl_j++) {
 		       printf(" %04d",  *shared_dataram2);
 		       shared_dataram2++;
-		       if (0x3 ==(jjj & 0x3)){printf("   ");}
+		       if (0x3 ==(chnl_j & 0x3)){printf("   ");}
          }
          printf("\n");
          sleep(1);

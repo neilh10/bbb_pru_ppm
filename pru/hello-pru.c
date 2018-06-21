@@ -34,9 +34,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * This uses PRU to output a pulses per second 
+ * This uses PRU to output a pulses per second. As written assumes PRU0
  * The API is through the shared ram.
- * The required port bits are set through 
+ * The required port bits need to be set through 
  * config-pins <Px_yy> pruout
  */
 				  
@@ -72,7 +72,6 @@ volatile register unsigned int __R31;
 //Output Channel mapping increasing with board Pin num. P9_25..31 then P8_11..12
 const char flowpin_out[8] = {GPIO07,GPIO05,GPIO03,GPIO01,GPIO02,GPIO00,GPIO15,GPIO14};
 
-//#define PRU0_GPIO ((1<<GPIO07) |(1<<GPIO05) |(1<<GPIO03) | (1<<GPIO01) | (1<<GPIO02)|(1<<GPIO00) ) 
 
 #define INS_PER_US 200         // 5ns per instruction
 #define INS_PER_DELAY_LOOP 2	 // two instructions per delay loop
@@ -103,7 +102,6 @@ struct port_pulses_s port_pulses[8];
 void main(void) {
 	int sec_i,chnl_i;
 	int ms_i;
-	int jjj;
 	int init_val;
 	int32_t out_R30;
    volatile uint32_t gpo; 
@@ -113,30 +111,34 @@ void main(void) {
 	/* Clear SYSCFG[STANDBY_INIT] to enable OCP master port */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
 	
-	*SHARED_RAM = (int) 104;  //Treat as simple version on startup
-	init_val =400; //
-	for(jjj=1; jjj<8; jjj++) {
-		channels.chn[jjj].sr = init_val;//inital value till changed
+	*SHARED_RAM = (int) 105;  //Treat as simple module version on startup
+	__R30 = 0; //init port
+	
+	//init channel to can start up with safe values
+	init_val =100; //
+	for(chnl_i=1; chnl_i<8; chnl_i++) {
+		channels.chn[chnl_i].sr = init_val;//inital value till changed
 		init_val+=50;
     }
-    /* Channel[out].sr has ppm
+    /* Channel[out].sr API is in  ppm
        if >60 - then pps = ppm/60
        For 1second processing period_ms[out] = 1000/pps
-       Need up counter per channel
     */    
 
 	while(1){ 
-	   //for(sec_i = 0; sec_i <60; sec_i++) //Represents 60Secs passing
+	   for(sec_i = 0; sec_i <60; sec_i++) //Represents 60Secs passing
 	   {
-	      //every sec
+	      //every sec - possibly go to 10Sec
          memcpy((void *)&channels,(void *)SHARED_RAM,sizeof(channels));
          for(chnl_i = 0; chnl_i <CHNL_TOT; chnl_i++) {
          	pp = &port_pulses[chnl_i];  
 		      pp->ppm = channels.chn[chnl_i].sr;	
 		      pp->pps = pp->ppm/SECS_IN_MINUTE;
-		      pp->channel_reload_ms = 1000/pp->pps; //period(ms) for pulse in 1000mS
-		      pp->channel_cnt_ms =pp->channel_reload_ms;
-		      pp->pulse_cnt_ms = PULSE_WIDTH_MS+1;//Compensate for 1st pass
+		      if (pp->pps) {
+		         pp->channel_reload_ms = 1000/pp->pps; //period(ms) for pulse in 1000mS
+		         pp->channel_cnt_ms =pp->channel_reload_ms;
+		         pp->pulse_cnt_ms = PULSE_WIDTH_MS+1;//Compensate for 1st pass
+		      }
          }
          for(ms_i = 0; ms_i <999; ms_i++) {  //mS loop - 
             out_R30 = 0; //Start 0 and construct pulses by setting bit
@@ -146,13 +148,13 @@ void main(void) {
             	pp = &port_pulses[chnl_i];  
                if ((0==pp->channel_cnt_ms)||(pp->pulse_cnt_ms)) { 
 		            out_R30 |= (1<<flowpin_out[chnl_i]); //Set pulse bit
-		            if (0!=pp->pulse_cnt_ms) {pp->pulse_cnt_ms--;}
+		            if (pp->pulse_cnt_ms) {pp->pulse_cnt_ms--;}
 		            if (0==pp->channel_cnt_ms) {   
 			            pp->channel_cnt_ms= pp->channel_reload_ms;
 			            pp->pulse_cnt_ms = PULSE_WIDTH_MS;
 		            }
                }
-               pp->channel_cnt_ms--;
+               if (pp->channel_cnt_ms) {pp->channel_cnt_ms--;}
             }
             __R30 = out_R30; //Set Out port for pulse conditions
             //__delay_cycles(CYCLES_1mS-2200);//Creates exactly 1ms loop timing
