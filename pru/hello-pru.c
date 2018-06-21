@@ -104,6 +104,7 @@ void main(void) {
 	int ms_i;
 	int jjj;
 	int offset;
+	int32_t out_R30;
     volatile uint32_t gpo; 
     volatile uint32_t value_ms = 100;
 
@@ -130,26 +131,29 @@ void main(void) {
 	while(1){ 
 	   //for(sec_i = 0; sec_i <60; sec_i++) //Represents 60Secs passing
 	   {
-	   	  //every sec
-          memcpy((void *)&channels,(void *)SHARED_RAM,sizeof(channels));
-        for(chnl_i = 0; chnl_i <CHNL_TOT; chnl_i++) {  
-		     port_pulses[chnl_i].ppm = channels.chn[chnl_i].sr;			
-		     port_pulses[chnl_i].pps = port_pulses[chnl_i].ppm/60;
-		     port_pulses[chnl_i].channel_reload_ms = 1000/port_pulses[chnl_i].pps;
-		     port_pulses[chnl_i].channel_cnt_ms =port_pulses[chnl_i].channel_reload_ms;
-        }
-        //for(ms_i = 0; ms_i <1000; ms_i++) {  //mS loop - 
-        //if (0==   port_pulses[chnl_i].channel_cnt_ms) { 
-		  __R30 |= (1<<flowpin_out[0]); //Set
-			//__R30 |= (0xff); //Set
-			
-		   __delay_cycles(CYCLES_1mS);
-
-			//__R30 ^= PRU0_GPIO;
-		   __R30 = 0;
-		
-		   while(port_pulses[0].channel_cnt_ms--)
-		   { __delay_cycles(CYCLES_1mS); }
+	      //every sec
+         memcpy((void *)&channels,(void *)SHARED_RAM,sizeof(channels));
+         for(chnl_i = 0; chnl_i <CHNL_TOT; chnl_i++) {  
+		       port_pulses[chnl_i].ppm = channels.chn[chnl_i].sr;			
+		       port_pulses[chnl_i].pps = port_pulses[chnl_i].ppm/60;
+		       port_pulses[chnl_i].channel_reload_ms = 1000/port_pulses[chnl_i].pps;
+		       port_pulses[chnl_i].channel_cnt_ms =port_pulses[chnl_i].channel_reload_ms;
+         }
+         for(ms_i = 0; ms_i <1000; ms_i++) {  //mS loop -
+            out_R30 = 0; //Start 0 and construct pulses by setting bit   
+            //for(chnl_i = 0; chnl_i <CHNL_TOT; chnl_i++) 
+            { 
+            chnl_i = 0;
+               port_pulses[chnl_i].channel_cnt_ms--;
+               if (0==port_pulses[chnl_i].channel_cnt_ms) { 
+		            out_R30 |= (1<<flowpin_out[chnl_i]); //Set
+			         //__R30 |= (0xff); //Set
+			         port_pulses[chnl_i].channel_cnt_ms= port_pulses[chnl_i].channel_reload_ms;
+               }
+            }
+            __R30 = out_R30; //Set Out port for pulse conditions
+            __delay_cycles(CYCLES_1mS-2200);
+           }
 	 	}
 	}
 

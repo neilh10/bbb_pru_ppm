@@ -93,7 +93,7 @@ void main() {
 	    for(iii=0; iii<8; iii++) {
 
 
-		    channels.chn[offset].sr +=ppm;
+		    channels.chn[offset].sr =ppm;
 		    memcpy((void *)shared_dataram,(void *)&channels,sizeof(channels));
 			
 		    printf("Writing %04d Read:", ppm);
