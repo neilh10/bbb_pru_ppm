@@ -100,7 +100,7 @@ struct port_pulses_s port_pulses[8];
 
 void main(void) {
 	//int i=7;
-	int sec_i;
+	int sec_i,chnl_i;
 	int ms_i;
 	int jjj;
 	int offset;
@@ -132,11 +132,14 @@ void main(void) {
 	   {
 	   	  //every sec
           memcpy((void *)&channels,(void *)SHARED_RAM,sizeof(channels));
-		  port_pulses[0].ppm = channels.chn[0].sr;			
-		  port_pulses[0].pps = port_pulses[0].ppm/60;
-		  port_pulses[0].channel_reload_ms = 1000/port_pulses[0].pps;
-		  port_pulses[0].channel_cnt_ms =port_pulses[0].channel_reload_ms;
-		  
+        for(chnl_i = 0; chnl_i <CHNL_TOT; chnl_i++) {  
+		     port_pulses[chnl_i].ppm = channels.chn[chnl_i].sr;			
+		     port_pulses[chnl_i].pps = port_pulses[chnl_i].ppm/60;
+		     port_pulses[chnl_i].channel_reload_ms = 1000/port_pulses[chnl_i].pps;
+		     port_pulses[chnl_i].channel_cnt_ms =port_pulses[chnl_i].channel_reload_ms;
+        }
+        //for(ms_i = 0; ms_i <1000; ms_i++) {  //mS loop - 
+        //if (0==   port_pulses[chnl_i].channel_cnt_ms) { 
 		  __R30 |= (1<<flowpin_out[0]); //Set
 			//__R30 |= (0xff); //Set
 			
@@ -145,8 +148,8 @@ void main(void) {
 			//__R30 ^= PRU0_GPIO;
 		   __R30 = 0;
 		
-		   //value_ms = port_pulses[0].pps;
-		   while(port_pulses[0].channel_cnt_ms--){ __delay_cycles(CYCLES_1mS); }
+		   while(port_pulses[0].channel_cnt_ms--)
+		   { __delay_cycles(CYCLES_1mS); }
 	 	}
 	}
 

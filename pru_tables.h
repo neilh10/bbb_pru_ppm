@@ -2,6 +2,7 @@
  * pru_tables.h/
  *
  */
+#define CHNL_TOT 8
 struct channel_s {
 	uint16_t ppm; //0-60*1000
 	//uint8_t pulse_width_0_5mS;
@@ -15,5 +16,5 @@ union channel_u {
 };
 
 struct channels_s {
-	union channel_u chn[8]; /*maps to SHARED_RAM space */
+	union channel_u chn[CHNL_TOT]; /*maps to SHARED_RAM space */
 } ;
