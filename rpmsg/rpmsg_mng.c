@@ -67,46 +67,42 @@ void main() {
 	volatile uint16_t *shared_dataram2;
 
 	
-    uint16_t ppm =60;//actually 
+   uint16_t ppm =60;//actually 
     
 	offset = 0;
 	channels.chn[offset].sr =ppm;
-	printf("shared_dataram = %p, offset=%d Read:", shared_dataram,offset);
-    shared_dataram2 = (uint16_t *) shared_dataram;
+	printf("shared_dataram = %p, offset=%d At init Read:", shared_dataram,offset);
+   shared_dataram2 = (uint16_t *) shared_dataram;
 	for(jjj=0; jjj<8; jjj++) {
 		printf(" %04d",  *shared_dataram2);
-	   	shared_dataram2++;
-	   	if (0x3 ==(jjj & 0x3)){printf("   ");}
-    }
-    printf("\n");
-    ppm =00;
+	   shared_dataram2++;
+	   if (0x3 ==(jjj & 0x3)){printf("   ");}
+   }
+   printf("\n");
+    
+   ppm =0;
 	for(jjj=0; jjj<8; jjj++) {
-       channels.chn[jjj].sr=ppm;
-       ppm += 60;
+	   ppm += 60;
+      channels.chn[jjj].sr=ppm;
     }
-    //Fut - wait for ack from PRU and then clear
-    //memset((void *)&channels,0,sizeof(channels));
-   
+    //Fut - wait for ack from PRU and then init shared ram
+
     //while (1) 
     {
-	    ppm=60;    	
+	    ppm=60;
 	    for(iii=0; iii<8; iii++) {
-
-
-		    channels.chn[offset].sr =ppm;
+	       channels.chn[offset].sr =ppm;
 		    memcpy((void *)shared_dataram,(void *)&channels,sizeof(channels));
 			
 		    printf("Writing %04d Read:", ppm);
 		    shared_dataram2 = (uint16_t *) shared_dataram;
 		    for(jjj=0; jjj<8; jjj++) {
-		    	printf(" %04d",  *shared_dataram2);
-		    	shared_dataram2++;
-		    	if (0x3 ==(jjj & 0x3)){printf("   ");}
-            }
-            printf("\n");
-
-		    sleep(1);
-
+		       printf(" %04d",  *shared_dataram2);
+		       shared_dataram2++;
+		       if (0x3 ==(jjj & 0x3)){printf("   ");}
+         }
+         printf("\n");
+         sleep(1);
 	    }
 	}
 	munmap((void *)shared_dataram,COMMS_PORT_SIZE); //njh guess at releasing it.

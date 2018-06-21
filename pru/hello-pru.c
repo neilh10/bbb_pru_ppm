@@ -68,10 +68,8 @@ volatile register unsigned int __R31;
 #define GPIO14 14 //P8_12 r30_14 GPIO1_12
 
 #define CUST_OUT1  GPIO07
+//Output Channel mapping increasing with board Pin num. P9_25..31 then P8_11..12
 const char flowpin_out[8] = {GPIO07,GPIO05,GPIO03,GPIO01,GPIO02,GPIO00,GPIO15,GPIO14};
-//P9_41 r31_6
-//P9_42 r31_4
-
 
 #define PRU0_GPIO ((1<<GPIO07) |(1<<GPIO05) |(1<<GPIO03) | (1<<GPIO01) | (1<<GPIO02)|(1<<GPIO00) ) 
 
@@ -82,7 +80,9 @@ const char flowpin_out[8] = {GPIO07,GPIO05,GPIO03,GPIO01,GPIO02,GPIO00,GPIO15,GP
 
 #define DELAY_CYCLES_FREQ CYCLES_500mS
 #define DELAY_CYCLES_PULSE_ON CYCLES_1mS
+#define PULSE_WIDTH_MS 4  //Actually 5msin downcount
 
+#define SECS_IN_MINUTE 60
 #define SHARED_RAM_ADDRESS 0x10000
 uint32_t volatile __far * const SHARED_RAM = (uint32_t *) (SHARED_RAM_ADDRESS);
 //struct channels_s volatile __far * const channels = (struct channels_s *) &SHARED_RAM;
@@ -90,11 +90,10 @@ struct channels_s  channels;
     
 struct port_pulses_s {
 	uint16_t ppm;  //Requested Pulses Per Min
-	uint16_t pps;  // calc Pulses per Sec.
-	uint16_t channel_reload_ms; //0-60*1000
+	uint16_t pps;  // Calc Pulses per Sec.
+	uint16_t channel_reload_ms; //0-60*1000 for every second
 	uint16_t channel_cnt_ms; //On reaching channel_reload_ms, resets channel counter to 0 and activates bit
-	//uint8_t pulse_width_0_5mS;
-	//uint8_t mode; //0=Continuous,1=singleshot
+	uint16_t pulse_cnt_ms; //On reload set count width - when !0 a pulse out, when 0 no pulse
 };
 struct port_pulses_s port_pulses[8];
 
@@ -105,9 +104,9 @@ void main(void) {
 	int jjj;
 	int offset;
 	int32_t out_R30;
-    volatile uint32_t gpo; 
-    volatile uint32_t value_ms = 100;
-
+   volatile uint32_t gpo; 
+   volatile uint32_t value_ms = 100;
+   struct port_pulses_s *pp;
 
 	/* Clear SYSCFG[STANDBY_INIT] to enable OCP master port */
 	CT_CFG.SYSCFG_bit.STANDBY_INIT = 0;
@@ -122,10 +121,8 @@ void main(void) {
     }
     /* Channel[out].sr has ppm
        if >60 - then pps = ppm/60
-       period_ms[out] = 1000/pps
-       
+       For 1second processing period_ms[out] = 1000/pps
        Need up counter per channel
-       
     */    
 
 	while(1){ 
@@ -133,26 +130,32 @@ void main(void) {
 	   {
 	      //every sec
          memcpy((void *)&channels,(void *)SHARED_RAM,sizeof(channels));
-         for(chnl_i = 0; chnl_i <CHNL_TOT; chnl_i++) {  
-		       port_pulses[chnl_i].ppm = channels.chn[chnl_i].sr;			
-		       port_pulses[chnl_i].pps = port_pulses[chnl_i].ppm/60;
-		       port_pulses[chnl_i].channel_reload_ms = 1000/port_pulses[chnl_i].pps;
-		       port_pulses[chnl_i].channel_cnt_ms =port_pulses[chnl_i].channel_reload_ms;
+         for(chnl_i = 0; chnl_i <CHNL_TOT; chnl_i++) {
+         	pp = &port_pulses[chnl_i];  
+		      port_pulses[chnl_i].ppm = channels.chn[chnl_i].sr;			
+		      port_pulses[chnl_i].pps = port_pulses[chnl_i].ppm/SECS_IN_MINUTE;
+		      port_pulses[chnl_i].channel_reload_ms = 1000/port_pulses[chnl_i].pps; //period(ms) for pulse in 1000mS
+		      port_pulses[chnl_i].channel_cnt_ms =port_pulses[chnl_i].channel_reload_ms;
+		      port_pulses[chnl_i].pulse_cnt_ms = PULSE_WIDTH_MS+1;//Compensate for 1st pass
          }
-         for(ms_i = 0; ms_i <1000; ms_i++) {  //mS loop -
-            out_R30 = 0; //Start 0 and construct pulses by setting bit   
-            //for(chnl_i = 0; chnl_i <CHNL_TOT; chnl_i++) 
-            { 
-            chnl_i = 0;
-               port_pulses[chnl_i].channel_cnt_ms--;
-               if (0==port_pulses[chnl_i].channel_cnt_ms) { 
-		            out_R30 |= (1<<flowpin_out[chnl_i]); //Set
-			         //__R30 |= (0xff); //Set
-			         port_pulses[chnl_i].channel_cnt_ms= port_pulses[chnl_i].channel_reload_ms;
+         for(ms_i = 0; ms_i <999; ms_i++) {  //mS loop - 
+            out_R30 = 0; //Start 0 and construct pulses by setting bit
+            for(chnl_i = 0; chnl_i <CHNL_TOT; chnl_i++)  {
+            	/* loop through every channel to see if timer has expired 
+            	 * and time for pulse activation */
+               if ((0==port_pulses[chnl_i].channel_cnt_ms)||(port_pulses[chnl_i].pulse_cnt_ms)) { 
+		            out_R30 |= (1<<flowpin_out[chnl_i]); //Set pulse bit
+		            if (0!=port_pulses[chnl_i].pulse_cnt_ms) {port_pulses[chnl_i].pulse_cnt_ms--;}
+		            if (0==port_pulses[chnl_i].channel_cnt_ms) {   
+			            port_pulses[chnl_i].channel_cnt_ms= port_pulses[chnl_i].channel_reload_ms;
+			            port_pulses[chnl_i].pulse_cnt_ms = PULSE_WIDTH_MS;
+		            }
                }
+               port_pulses[chnl_i].channel_cnt_ms--;
             }
             __R30 = out_R30; //Set Out port for pulse conditions
-            __delay_cycles(CYCLES_1mS-2200);
+            //__delay_cycles(CYCLES_1mS-2200);//Creates exactly 1ms loop timing
+            __delay_cycles(CYCLES_1mS-2100);
            }
 	 	}
 	}
