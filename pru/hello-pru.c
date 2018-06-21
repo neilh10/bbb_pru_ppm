@@ -64,7 +64,11 @@ volatile register unsigned int __R31;
 #define GPIO01 1 //P9_29 r31_01
 #define GPIO02 2 //P9_30 r31_02 gpio3_16
 #define GPIO00 0 //P9_31 r31_00
+#define GPIO15 15 //P8_11 r30_15 GPIO1_13
+#define GPIO14 14 //P8_12 r30_14 GPIO1_12
 
+#define CUST_OUT1  GPIO07
+const char flowpin_out[8] = {GPIO07,GPIO05,GPIO03,GPIO01,GPIO02,GPIO00,GPIO15,GPIO14};
 //P9_41 r31_6
 //P9_42 r31_4
 
@@ -82,11 +86,23 @@ volatile register unsigned int __R31;
 #define SHARED_RAM_ADDRESS 0x10000
 uint32_t volatile __far * const SHARED_RAM = (uint32_t *) (SHARED_RAM_ADDRESS);
 //struct channels_s volatile __far * const channels = (struct channels_s *) &SHARED_RAM;
- struct channels_s  channels;
+struct channels_s  channels;
     
+struct port_pulses_s {
+	uint16_t ppm;  //Requested Pulses Per Min
+	uint16_t pps;  // calc Pulses per Sec.
+	uint16_t channel_reload_ms; //0-60*1000
+	uint16_t channel_cnt_ms; //On reaching channel_reload_ms, resets channel counter to 0 and activates bit
+	//uint8_t pulse_width_0_5mS;
+	//uint8_t mode; //0=Continuous,1=singleshot
+};
+struct port_pulses_s port_pulses[8];
+
 void main(void) {
-	int i=7;
-	int j;
+	//int i=7;
+	int sec_i;
+	int ms_i;
+	int jjj;
 	int offset;
     volatile uint32_t gpo; 
     volatile uint32_t value_ms = 100;
@@ -97,38 +113,42 @@ void main(void) {
 	
 	//*SHARED_RAM = 500;//inital value till changed
 	//channels.sr[0].ppm = 500;//inital value till changed
-	*SHARED_RAM = (int) 102;  //Treat as simple version on startup
-	offset =1; //
-	channels.chn[offset].sr_uint32 = 200;//inital value till changed
-	channels.chn[offset+1].sr_uint32 = 250;
-	
-	//for(i = 1000000; i > 0; i = (i * decay) / 100) {
-	 while(1){ 
-	 	//for(i = 0; i < 8; i++) 
-	 	{
-#ifndef LED_DISABLE
-			*GPIO1_SET = USR0;
-#endif
-			//__R30 |= PRU0_GPIO; //Set
-			//value = *SHARED_RAM.sr[0].ppm;
-			//channels.chn[0].sr_uint32 = *SHARED_RAM;
-			memcpy((void *)&channels,(void *)SHARED_RAM,sizeof(channels));
-			value_ms = channels.chn[offset].sr_uint32;			
+	*SHARED_RAM = (int) 104;  //Treat as simple version on startup
+	offset =400; //
+	for(jjj=1; jjj<8; jjj++) {
+		channels.chn[jjj].sr = offset;//inital value till changed
+		offset+=50;
+    }
+    /* Channel[out].sr has ppm
+       if >60 - then pps = ppm/60
+       period_ms[out] = 1000/pps
+       
+       Need up counter per channel
+       
+    */    
 
-			__R30 |= (1<<i); //Set
-
-			 __delay_cycles(DELAY_CYCLES_PULSE_ON);
-#ifndef LED_DISABLE
-			*GPIO1_CLEAR = USR0;
-#endif
+	while(1){ 
+	   //for(sec_i = 0; sec_i <60; sec_i++) //Represents 60Secs passing
+	   {
+	   	  //every sec
+          memcpy((void *)&channels,(void *)SHARED_RAM,sizeof(channels));
+		  port_pulses[0].ppm = channels.chn[0].sr;			
+		  port_pulses[0].pps = port_pulses[0].ppm/60;
+		  port_pulses[0].channel_reload_ms = 1000/port_pulses[0].pps;
+		  port_pulses[0].channel_cnt_ms =port_pulses[0].channel_reload_ms;
+		  
+		  __R30 |= (1<<flowpin_out[0]); //Set
+			//__R30 |= (0xff); //Set
+			
+		   __delay_cycles(CYCLES_1mS);
 
 			//__R30 ^= PRU0_GPIO;
-			__R30 = 0;
+		   __R30 = 0;
 		
-			for(j=0;j<value_ms;j++){ __delay_cycles(CYCLES_1mS); }
-			//__delay_cycles( CYCLES_1mS*value);
+		   //value_ms = port_pulses[0].pps;
+		   while(port_pulses[0].channel_cnt_ms--){ __delay_cycles(CYCLES_1mS); }
 	 	}
 	}
 
-	//__halt();
+	__halt();
 }

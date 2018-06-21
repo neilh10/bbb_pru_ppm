@@ -4,13 +4,13 @@
  */
 struct channel_s {
 	uint16_t ppm; //0-60*1000
-	uint8_t pulse_width_0_5mS;
-	uint8_t mode; //0=Continuous,1=singleshot
+	//uint8_t pulse_width_0_5mS;
+	//uint8_t mode; //0=Continuous,1=singleshot
 } ;
 
 
 union channel_u {
-    uint32_t sr_uint32;
+    uint16_t sr; //shared ram
     struct channel_s channel;
 };
 

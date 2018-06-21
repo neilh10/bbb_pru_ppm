@@ -64,48 +64,49 @@ void main() {
 		mem_dev,
 		AM33XX_PRUSS_SHAREDRAM_BASE
 	);
-	volatile uint32_t *shared_dataram2;
+	volatile uint16_t *shared_dataram2;
 
 	
-    uint32_t pps_delay_ms =200;
+    uint16_t ppm =60;//actually 
     
-	offset = 1;
-	channels.chn[offset].sr_uint32 =pps_delay_ms;
+	offset = 0;
+	channels.chn[offset].sr =ppm;
 	printf("shared_dataram = %p, offset=%d Read:", shared_dataram,offset);
-    shared_dataram2 = (uint32_t *) shared_dataram;
+    shared_dataram2 = (uint16_t *) shared_dataram;
 	for(jjj=0; jjj<8; jjj++) {
 		printf(" %04d",  *shared_dataram2);
 	   	shared_dataram2++;
 	   	if (0x3 ==(jjj & 0x3)){printf("   ");}
     }
-            printf("\n");
-	//for(jjj=0; jjj<8; jjj++) {
-    //   channels.chn[jjj].sr_uint32=0;
-    //}
+    printf("\n");
+    ppm =00;
+	for(jjj=0; jjj<8; jjj++) {
+       channels.chn[jjj].sr=ppm;
+       ppm += 60;
+    }
     //Fut - wait for ack from PRU and then clear
     //memset((void *)&channels,0,sizeof(channels));
    
     //while (1) 
     {
+	    ppm=60;    	
 	    for(iii=0; iii<8; iii++) {
-	    	pps_delay_ms+=100;
 
-		    channels.chn[offset].sr_uint32 =pps_delay_ms;
+
+		    channels.chn[offset].sr +=ppm;
 		    memcpy((void *)shared_dataram,(void *)&channels,sizeof(channels));
 			
-		    printf("Writing %04d Read:", pps_delay_ms);
-		    shared_dataram2 = (uint32_t *) shared_dataram;
+		    printf("Writing %04d Read:", ppm);
+		    shared_dataram2 = (uint16_t *) shared_dataram;
 		    for(jjj=0; jjj<8; jjj++) {
 		    	printf(" %04d",  *shared_dataram2);
 		    	shared_dataram2++;
 		    	if (0x3 ==(jjj & 0x3)){printf("   ");}
             }
             printf("\n");
-	//printf("Read 0x%08x\n", j);
-		    //usleep(1000);
+
 		    sleep(1);
-		    //j = *(unsigned int *)shared_dataram;
-		    //printf("Read 0x%08x (0x%08x)\n", j, j^0xAAAAAAAA);
+
 	    }
 	}
 	munmap((void *)shared_dataram,COMMS_PORT_SIZE); //njh guess at releasing it.
