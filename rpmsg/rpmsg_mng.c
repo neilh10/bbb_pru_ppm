@@ -49,16 +49,17 @@
 #define AM33XX_DATARAM0_PHYS_BASE		0x4a300000
 #define AM33XX_DATARAM1_PHYS_BASE		0x4a302000
 #define AM33XX_PRUSS_SHAREDRAM_BASE		0x4a310000
+#define SHARED_RAM_SZ 32  /* grab 8*4 bytes or 8 words */
 
 void main() {
 	unsigned int iii, jjj;
 	unsigned int offset;
     struct channels_s  channels;
-#define COMMS_PORT_SIZE 64
+
 	/* Allocate shared memory pointer to PRU0 DATARAM */
 	int mem_dev = open("/dev/mem", O_RDWR | O_SYNC);
 	volatile void *shared_dataram = mmap(NULL,
-	   COMMS_PORT_SIZE,	/* grab 8*4 bytes or 8 words */
+	   SHARED_RAM_SZ,	
 		PROT_READ | PROT_WRITE,
 		MAP_SHARED,
 		mem_dev,
@@ -105,5 +106,5 @@ void main() {
          sleep(1);
 	    }
 	}
-	munmap((void *)shared_dataram,COMMS_PORT_SIZE); //njh guess at releasing it.
+	munmap((void *)shared_dataram,SHARED_RAM_SZ); //njh guess at releasing it.
 }
