@@ -3,7 +3,7 @@
 # The script builds the pru_blinky project and configures the pinmuxing for $HEADER$PIN_NUM
 
 #If changing these variables, make sure the given pin can be muxed to the given pru.  
-HEADER=P9_
+
 PIN_NUMBER1=P9_25
 PIN_NUMBER2=P9_27
 PIN_NUMBER3=P9_28

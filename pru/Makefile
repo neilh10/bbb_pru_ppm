@@ -2,7 +2,7 @@
 # Copyright (c) 2016 Zubeen Tolani <ZeekHuge - zeekhuge@gmail.com>
 # Copyright (c) 2017 Texas Instruments - Jason Kridner <jdk@ti.com>
 #
-PROJ_NAME=hello-pru
+PROJ_NAME=ppm-pru
 
 # PRU_CGT environment variable must point to the TI PRU compiler directory.
 # PRU_SUPPORT points to pru-software-support-package

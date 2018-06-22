@@ -4,4 +4,4 @@
 .pp
 *.asm
 rpmsg/rpmsg_mng
-pru/gen/hello-pru.out
+pru/gen
