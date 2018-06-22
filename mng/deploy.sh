@@ -29,8 +29,8 @@
 #
 #############################################################################
 echo "———##########———Compilling C code———##########———"
-gcc rpmsg_mng.c -D MAIN_LOCAL -o  rpmsg_mng
+gcc bbbio_api_mng.c -D MAIN_LOCAL -o  bbbio_api_mng
 echo "———##########———Starting..."
-chmod +x rpmsg_mng
-./rpmsg_mng
+chmod +x bbbio_api_mng
+./bbbio_api_mng
 echo "...Ending———##########———"

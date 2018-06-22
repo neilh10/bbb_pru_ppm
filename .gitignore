@@ -3,5 +3,5 @@
 *.obj
 .pp
 *.asm
-rpmsg/rpmsg_mng
+mng/bbbio_api_mng
 pru/gen

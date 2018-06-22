@@ -78,7 +78,7 @@ echo "-Building project"
 	make
 	sudo make run0
 
-cd ../rpmsg
+cd ../mng
 sudo sh ./deploy.sh
 
 echo "Done. Ppm pulse on pin"
