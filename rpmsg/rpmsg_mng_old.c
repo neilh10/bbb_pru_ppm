@@ -41,6 +41,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/mman.h>
+//typedef unsigned int uint32_t;
 #include <stdint.h>
 #include <string.h>
 #include "../pru_tables.h"
@@ -50,46 +51,34 @@
 #define AM33XX_PRUSS_SHAREDRAM_BASE		0x4a310000
 #define SHARED_RAM_SZ 32  /* grab 8*4 bytes or 8 words */
 
-volatile uint16_t *shared_dataram;
-
-/* Define an API to be calleable from JS */
-
+volatile void     *shared_dataram;
+volatile uint16_t *shared_dataram2;
+struct channels_s  channels;
+	
 void bbbio_ppm_api(struct channels_s *channels){
-   memcpy((void *)shared_dataram,(void *)channels,sizeof(channels));
+	memcpy((void *)shared_dataram,(void *)&channels,sizeof(channels));
 }
 
-void bbbio_ppm_init() {
-   /* Allocate shared memory pointer to PRU0 DATARAM */
+void main() {
+	unsigned int sec_i, chnl_j;
+	unsigned int offset;
+   struct channels_s  channels;
+
+	/* Allocate shared memory pointer to PRU0 DATARAM */
 	int mem_dev = open("/dev/mem", O_RDWR | O_SYNC);
-	volatile void *shared_dataram_init = mmap(NULL,
+	volatile void *shared_dataram = mmap(NULL,
 	   SHARED_RAM_SZ,	
 		PROT_READ | PROT_WRITE,
 		MAP_SHARED,
 		mem_dev,
 		AM33XX_PRUSS_SHAREDRAM_BASE
 	);
-	
-	shared_dataram = (uint16_t *) shared_dataram_init;
-}
-
-void bbbio_ppm_cleanup() {
-	munmap((void *)shared_dataram,SHARED_RAM_SZ); //njh guess at releasing it.
-}
-
-#ifdef MAIN_LOCAL
-void main() {
-	unsigned int sec_i, chnl_j;
-	unsigned int offset;
-   struct channels_s  channels;
-   volatile uint16_t *shared_dataram2;
-
-   bbbio_ppm_init();
-	
+	volatile uint16_t *shared_dataram2;
    uint16_t ppm =60;//actually 
     
 	offset = 0;
 	channels.chn[offset].sr =ppm;
-	printf("shared_datara2 = %p, offset=%d At init Read:", shared_dataram,offset);
+	printf("shared_dataram = %p, offset=%d At init Read:", shared_dataram,offset);
    shared_dataram2 = (uint16_t *) shared_dataram;
 	for(chnl_j=0; chnl_j<8; chnl_j++) {
 		printf(" %04d",  *shared_dataram2);
@@ -97,7 +86,6 @@ void main() {
 	   if (0x3 ==(chnl_j & 0x3)){printf("   ");}
    }
    printf("\n");
-    
    ppm =0;
 	for(chnl_j=0; chnl_j<8; chnl_j++) {
       channels.chn[chnl_j].sr=ppm;
@@ -111,7 +99,7 @@ void main() {
 	    for(sec_i=0; sec_i<8; sec_i++) {
 	       channels.chn[offset].sr +=ppm;
 		    //memcpy((void *)shared_dataram,(void *)&channels,sizeof(channels));
-			 bbbio_ppm_api(&channels);
+			 bbbio_ppm_api( &channels);
 		    printf("Writing %04d Read:", ppm);
 		    shared_dataram2 = (uint16_t *) shared_dataram;
 		    for(chnl_j=0; chnl_j<8; chnl_j++) {
@@ -123,7 +111,5 @@ void main() {
          sleep(1);
 	    }
 	}
-	bbbio_ppm_cleanup();
+	munmap((void *)shared_dataram,SHARED_RAM_SZ); //njh guess at releasing it.
 }
-
-#endif //MAIN_LOCAL

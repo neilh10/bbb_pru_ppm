@@ -29,7 +29,7 @@
 #
 #############################################################################
 echo "———##########———Compilling C code———##########———"
-gcc rpmsg_mng.c -o  rpmsg_mng
+gcc rpmsg_mng.c -D MAIN_LOCAL -o  rpmsg_mng
 echo "———##########———Starting..."
 chmod +x rpmsg_mng
 ./rpmsg_mng
