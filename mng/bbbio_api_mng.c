@@ -48,14 +48,14 @@
 #define AM33XX_DATARAM0_PHYS_BASE		0x4a300000
 #define AM33XX_DATARAM1_PHYS_BASE		0x4a302000
 #define AM33XX_PRUSS_SHAREDRAM_BASE		0x4a310000
-#define SHARED_RAM_SZ 32  /* grab 8*4 bytes or 8 words */
+#define SHARED_RAM_SZ sizeof(struct channels_s)  /* grab API size */
 
 volatile uint16_t *shared_dataram;
 
-/* Define an API to be calleable from JS */
+/* Define an API to be calleable from JS - not implemented yet */
 
 void bbbio_ppm_api(struct channels_s *channels){
-   memcpy((void *)shared_dataram,(void *)channels,sizeof(channels));
+   memcpy((void *)shared_dataram,(void *)channels,SHARED_RAM_SZ);
 }
 
 void bbbio_ppm_init() {
@@ -110,7 +110,6 @@ void main() {
 	    ppm=60;
 	    for(sec_i=0; sec_i<8; sec_i++) {
 	       channels.chn[offset].sr +=ppm;
-		    //memcpy((void *)shared_dataram,(void *)&channels,sizeof(channels));
 			 bbbio_ppm_api(&channels);
 		    printf("Writing %04d Read:", ppm);
 		    shared_dataram2 = (uint16_t *) shared_dataram;

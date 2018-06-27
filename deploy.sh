@@ -50,9 +50,9 @@ PIN_NUMBER8=P8_12
 #PRU_CORE should be either 0 or 1
 PRU_CORE=0
 
-if [ $CONFIGURE_PINS eq 0 ]
+if [ -z "$YCONFIGURE_PINS"]
    then
-	CONFIGURE_PINS=1
+	export YCONFIGURE_PINS="done"
 	echo "-Configuring pinmux"
 		config-pin -a $PIN_NUMBER1 pruout
 		config-pin -q $PIN_NUMBER1
