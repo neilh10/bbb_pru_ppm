@@ -11,9 +11,9 @@ $sudo apt update
 $sudo apt install --only-upgrade bb-cape-overlays  
 $sudo reboot now  
 Create SSH and store in github->settings  
-$git config --global user.name "name"
-$git config --global user.email  <email>
-$mkdir git; cd git; git clone git@github.com:neilh10/bbb_pru_ppm.git github_bbb_pru_ppm   
+$git config --global user.name "name"  
+$git config --global user.email  <email>  
+$mkdir git; cd git; git clone git@github.com:neilh10/bbb_pru_ppm.git   
 $config-pin P9_25 pruout     # repeat 27 28 29 30 31 P8_11 P8_12  
 $config-pin -q P9_25  
 Shortcut is  
