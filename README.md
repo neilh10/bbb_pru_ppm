@@ -1,8 +1,15 @@
 # bbb_pru_ppm
 BeagleBone Black - using the PRU0 for generating a pulse per minute signal on output. That is a variable frequency, fixed pulse width. Range 0ppm to 6000ppm(60sec*1000pps)
 
-Status/Testing
-<latest-date>  
+To setup from a new BBB    
+sudo nano /boot/uEnv.txt  #change to be as follows  
+disable_uboot_overlay_audio=1  
+cmdline=coherent_pool=1M net.ifnames=0 quiet **cape_universaln=enable**  
+uboot_overlay_pru=/lib/firmware/AM335X-PRU-RPROC-4-14-TI-00A0.dtbo  
+\*Exit*
+
+Status/Testing  
+*latest-date-frst*  
 180626-1700: [4.14.49] rebuit and workking with P9_25 _26 - looks like shareRam comms issue from 3rd variable  
 18061?: [4.9.78] P9_25 27 28 29 30 31, P8_11 12 working with shareRam[i][0-7] using <16bits> per [i]  
 180616-1610: Channel7 P9_25 ppm_delay transferring sharedRam[i]0,1,2,3,4 using <32bits>- but not 5,onwards!!  
