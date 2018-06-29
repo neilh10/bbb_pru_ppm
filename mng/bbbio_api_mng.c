@@ -45,6 +45,11 @@
 #include <string.h>
 #include "../pru_tables.h"
 
+/*ARM-A8 PRU memory Page 184 am335x TRM
+ * For AM33XX_DATARAMx_PHYS_BASE allow for compiler stack which start at 000 and works up
+ *RAM0 & RAM1 are 8Kbytes
+ * SHAREDRAM is 12kbytes - shared both PRU
+*/
 #define AM33XX_DATARAM0_PHYS_BASE		0x4a300000
 #define AM33XX_DATARAM1_PHYS_BASE		0x4a302000
 #define AM33XX_PRUSS_SHAREDRAM_BASE		0x4a310000
